@@ -358,7 +358,25 @@ PASV:
 		port |= portOctet << (byte(1-i) * 8)
 	}
 
+	// Some servers respons with their inner (bogus) address.
+	if host := ip.String(); pconn.host != host {
+		if cmdIP := net.ParseIP(pconn.host); cmdIP != nil {
+			if dataIP := net.ParseIP(host); dataIP != nil {
+				if isBogusDataIP(cmdIP, dataIP) {
+					return net.JoinHostPort(pconn.host, strconv.Itoa(port)), nil
+				}
+			}
+		}
+	}
+
 	return net.JoinHostPort(ip.String(), strconv.Itoa(port)), nil
+}
+
+func isBogusDataIP(cmdIP, dataIP net.IP) bool {
+	// Logic stolen from lftp (https://github.com/lavv17/lftp/blob/d67fc14d085849a6b0418bb3e912fea2e94c18d1/src/ftpclass.cc#L769)
+	return dataIP.IsMulticast() ||
+		cmdIP.IsPrivate() != dataIP.IsPrivate() ||
+		cmdIP.IsLoopback() != dataIP.IsLoopback()
 }
 
 type dataConn struct {
