@@ -359,11 +359,13 @@ PASV:
 	}
 
 	// Some servers respons with their inner (bogus) address.
-	if host := ip.String(); pconn.host != host {
-		if cmdIP := net.ParseIP(pconn.host); cmdIP != nil {
-			if dataIP := net.ParseIP(host); dataIP != nil {
+	cmd, _, _ := net.SplitHostPort(pconn.host)
+	if data := ip.String(); data != cmd {
+		pconn.debug("data=" + data + " cmd=" + cmd)
+		if cmdIP := net.ParseIP(cmd); cmdIP != nil {
+			if dataIP := net.ParseIP(data); dataIP != nil {
 				if isBogusDataIP(cmdIP, dataIP) {
-					return net.JoinHostPort(pconn.host, strconv.Itoa(port)), nil
+					return net.JoinHostPort(cmd, strconv.Itoa(port)), nil
 				}
 			}
 		}
